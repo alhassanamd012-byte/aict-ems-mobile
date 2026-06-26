@@ -157,12 +157,26 @@ export default function App() {
     }
     setLeaveLoading(true);
     try {
-      Alert.alert('Success', 'Leave request submitted successfully!');
-      setLeaveDate('');
-      setLeaveReason('');
-      setScreen('dashboard');
+      const res = await fetch(`${API}/api/leaves`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          employeeId: employee._id,
+          leaveDate,
+          reason: leaveReason
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        Alert.alert('Success', 'Leave request submitted successfully!');
+        setLeaveDate('');
+        setLeaveReason('');
+        setScreen('dashboard');
+      } else {
+        Alert.alert('Error', data.message || 'Failed to submit leave request');
+      }
     } catch (err) {
-      Alert.alert('Error', 'Cannot submit leave request');
+      Alert.alert('Error', 'Cannot connect to server');
     } finally {
       setLeaveLoading(false);
     }
@@ -400,7 +414,7 @@ export default function App() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtn} onPress={() => setScreen('leave')}>
                 <Text style={styles.actionIcon}>📝</Text>
-                <Text style={styles.actionText}>Leave Request</Text>
+                <Text style={styles.actionText}>Leave</Text>
               </TouchableOpacity>
             </View>
           </View>
