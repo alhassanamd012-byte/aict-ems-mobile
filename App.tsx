@@ -5,6 +5,29 @@ import {
   ScrollView, SafeAreaView
 } from 'react-native';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+async function registerForPushNotifications() {
+  if (!Device.isDevice) return null;
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  if (finalStatus !== 'granted') return null;
+  const token = await Notifications.getExpoPushTokenAsync({
+    projectId: '927f4ee4-b5cd-42f0-a9b9-b63774335e26'
+  });
+  return token.data;
+}
 const API = 'https://emp-management-api-4icz.onrender.com';
 export default function App() {
   const [screen, setScreen] = useState('login');
@@ -18,6 +41,19 @@ export default function App() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [leaveReason, setLeaveReason] = useState('');
   const [leaveDate, setLeaveDate] = useState('');
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  React.useEffect(() => {
+    const subscription1 = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+    const subscription2 = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification tapped:', response);
+    });
+    return () => {
+      subscription1.remove();
+      subscription2.remove();
+    };
+  }, []);
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
@@ -35,6 +71,14 @@ export default function App() {
         setEmployee(data.employee);
         setToken(data.token);
         setScreen('dashboard');
+        const pushToken = await registerForPushNotifications();
+        if (pushToken) {
+          await fetch(`${API}/api/notifications/save-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ employeeId: data.employee._id, pushToken })
+          });
+        }
       } else {
         Alert.alert('Error', data.message || 'Login failed');
       }
@@ -106,6 +150,23 @@ export default function App() {
     setPassword('');
     setScreen('login');
   };
+  const handleLeaveRequest = async () => {
+    if (!leaveDate || !leaveReason) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    setLeaveLoading(true);
+    try {
+      Alert.alert('Success', 'Leave request submitted successfully!');
+      setLeaveDate('');
+      setLeaveReason('');
+      setScreen('dashboard');
+    } catch (err) {
+      Alert.alert('Error', 'Cannot submit leave request');
+    } finally {
+      setLeaveLoading(false);
+    }
+  };
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   if (screen === 'login') return (
     <View style={styles.container}>
@@ -144,6 +205,49 @@ export default function App() {
         </TouchableOpacity>
       </View>
     </View>
+  );
+  if (screen === 'leave') return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <View style={styles.header}>
+        <Text style={styles.logo}>AICT</Text>
+        <Text style={styles.subtitle}>Leave Request</Text>
+      </View>
+      <ScrollView>
+        <View style={{ padding: 16 }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setScreen('dashboard')}>
+            <Text style={styles.backBtnText}>← Back to Dashboard</Text>
+          </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.title}>Apply for Leave</Text>
+            <Text style={styles.label}>Leave Date</Text>
+            <TextInput
+              style={styles.input}
+              value={leaveDate}
+              onChangeText={setLeaveDate}
+              placeholder="YYYY-MM-DD (e.g. 2026-07-01)"
+              placeholderTextColor="#94a3b8"
+            />
+            <Text style={styles.label}>Reason for Leave</Text>
+            <TextInput
+              style={[styles.input, { height: 120, textAlignVertical: 'top' }]}
+              value={leaveReason}
+              onChangeText={setLeaveReason}
+              placeholder="Enter reason for leave..."
+              placeholderTextColor="#94a3b8"
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.btn, leaveLoading && styles.btnDisabled]}
+              onPress={handleLeaveRequest}
+              disabled={leaveLoading}
+            >
+              {leaveLoading ? <ActivityIndicator color="white" /> : <Text style={styles.btnText}>Submit Leave Request</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
   if (screen === 'profile') return (
     <SafeAreaView style={styles.container}>
@@ -293,6 +397,10 @@ export default function App() {
               <TouchableOpacity style={styles.actionBtn} onPress={() => setScreen('profile')}>
                 <Text style={styles.actionIcon}>👤</Text>
                 <Text style={styles.actionText}>My Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => setScreen('leave')}>
+                <Text style={styles.actionIcon}>📝</Text>
+                <Text style={styles.actionText}>Leave Request</Text>
               </TouchableOpacity>
             </View>
           </View>
