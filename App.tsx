@@ -73,13 +73,17 @@ export default function App() {
         setEmployee(data.employee);
         setToken(data.token);
         setScreen('dashboard');
-        const pushToken = await registerForPushNotifications();
-        if (pushToken) {
-          await fetch(`${API}/api/notifications/save-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ employeeId: data.employee._id, pushToken })
-          });
+        try {
+          const pushToken = await registerForPushNotifications();
+          if (pushToken) {
+            await fetch(`${API}/api/notifications/save-token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ employeeId: data.employee._id, pushToken })
+            });
+          }
+        } catch (pushError) {
+          console.log('Push token error:', pushError);
         }
       } else {
         Alert.alert('Error', data.message || 'Login failed');
@@ -153,32 +157,34 @@ export default function App() {
     setScreen('login');
   };
   const handleLeaveRequest = async () => {
-    if (!leaveDate || !leaveReason) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!leaveReason) {
+      Alert.alert('Error', 'Please enter reason for leave');
       return;
     }
     setLeaveLoading(true);
     try {
+      const dateString = leaveDate instanceof Date ? leaveDate.toISOString() : new Date(leaveDate).toISOString();
       const res = await fetch(`${API}/api/leaves`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({
           employeeId: employee._id,
-          leaveDate: leaveDate.toISOString(),
+          leaveDate: dateString,
           reason: leaveReason
         })
       });
       const data = await res.json();
       if (data.success) {
         Alert.alert('Success', 'Leave request submitted successfully!');
-        setLeaveDate('');
+        setLeaveDate(new Date());
         setLeaveReason('');
         setScreen('dashboard');
       } else {
-        Alert.alert('Error', data.message || 'Failed to submit leave request');
+        Alert.alert('Error', data.message || 'Failed to submit');
       }
     } catch (err) {
-      Alert.alert('Error', 'Cannot connect to server');
+      console.log('Leave error:', err);
+      Alert.alert('Error', 'Cannot connect to server. Please try again.');
     } finally {
       setLeaveLoading(false);
     }
