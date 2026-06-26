@@ -5,6 +5,7 @@ import {
   ScrollView, SafeAreaView
 } from 'react-native';
 import * as Location from 'expo-location';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 Notifications.setNotificationHandler({
@@ -40,7 +41,8 @@ export default function App() {
   const [salaries, setSalaries] = useState<any[]>([]);
   const [leaves, setLeaves] = useState<any[]>([]);
   const [leaveReason, setLeaveReason] = useState('');
-  const [leaveDate, setLeaveDate] = useState('');
+  const [leaveDate, setLeaveDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [leaveLoading, setLeaveLoading] = useState(false);
   React.useEffect(() => {
     const subscription1 = Notifications.addNotificationReceivedListener(notification => {
@@ -162,7 +164,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({
           employeeId: employee._id,
-          leaveDate,
+          leaveDate: leaveDate.toISOString(),
           reason: leaveReason
         })
       });
@@ -235,13 +237,26 @@ export default function App() {
           <View style={styles.card}>
             <Text style={styles.title}>Apply for Leave</Text>
             <Text style={styles.label}>Leave Date</Text>
-            <TextInput
-              style={styles.input}
-              value={leaveDate}
-              onChangeText={setLeaveDate}
-              placeholder="YYYY-MM-DD (e.g. 2026-07-01)"
-              placeholderTextColor="#94a3b8"
-            />
+            <TouchableOpacity
+              style={[styles.input, { justifyContent: 'center' }]}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={{ color: '#1e293b', fontSize: 15 }}>
+                {leaveDate.toLocaleDateString('en-IN')}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={leaveDate}
+                mode="date"
+                display="default"
+                minimumDate={new Date()}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) setLeaveDate(selectedDate);
+                }}
+              />
+            )}
             <Text style={styles.label}>Reason for Leave</Text>
             <TextInput
               style={[styles.input, { height: 120, textAlignVertical: 'top' }]}
