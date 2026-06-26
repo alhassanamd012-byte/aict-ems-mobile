@@ -145,6 +145,52 @@ export default function App() {
       </View>
     </View>
   );
+  if (screen === 'profile') return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <View style={styles.header}>
+        <Text style={styles.logo}>AICT</Text>
+        <Text style={styles.subtitle}>My Profile</Text>
+      </View>
+      <ScrollView>
+        <View style={{ padding: 16 }}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setScreen('dashboard')}>
+            <Text style={styles.backBtnText}>← Back to Dashboard</Text>
+          </TouchableOpacity>
+          <View style={styles.card}>
+            <View style={[styles.profileRow, { marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }]}>
+              <View style={[styles.avatar, { width: 70, height: 70, borderRadius: 35 }]}>
+                <Text style={[styles.avatarText, { fontSize: 30 }]}>{employee?.name?.charAt(0).toUpperCase()}</Text>
+              </View>
+              <View>
+                <Text style={[styles.empName, { fontSize: 20 }]}>{employee?.name}</Text>
+                <Text style={styles.empDesig}>{employee?.designation}</Text>
+              </View>
+            </View>
+            <View style={styles.infoGrid}>
+              {[
+                { label: 'Employee ID', value: employee?.employeeId },
+                { label: 'Department', value: employee?.department },
+                { label: 'Email', value: employee?.email },
+                { label: 'Phone', value: employee?.phone },
+                { label: 'Basic Salary', value: '₹' + Number(employee?.basicSalary).toLocaleString('en-IN') },
+                { label: 'Allowances', value: '₹' + Number(employee?.allowances).toLocaleString('en-IN') },
+                { label: 'Deductions', value: '₹' + Number(employee?.deductions).toLocaleString('en-IN') },
+                { label: 'Net Salary', value: '₹' + (Number(employee?.basicSalary) + Number(employee?.allowances) - Number(employee?.deductions)).toLocaleString('en-IN') },
+                { label: 'Joining Date', value: new Date(employee?.joiningDate).toLocaleDateString('en-IN') },
+                { label: 'Status', value: employee?.isActive ? 'Active' : 'Inactive' },
+              ].map(({ label, value }) => (
+                <View key={label} style={styles.infoCard}>
+                  <Text style={styles.infoLabel}>{label}</Text>
+                  <Text style={styles.infoValue}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
   if (screen === 'salary') return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
@@ -200,7 +246,7 @@ export default function App() {
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
       <View style={styles.header}>
         <Text style={styles.logo}>AICT</Text>
-        <Text style={styles.subtitle}>Employee Dashboard</Text>
+        <Text style={styles.subtitle}>Employee Management System</Text>
       </View>
       <ScrollView>
         <View style={{ padding: 16 }}>
@@ -225,14 +271,14 @@ export default function App() {
                 onPress={handleCheckIn}
                 disabled={checkLoading}
               >
-                {checkLoading ? <ActivityIndicator color="white" /> : <Text style={styles.checkBtnText}>✅ Check In</Text>}
+                {checkLoading ? <ActivityIndicator color="white" /> : <Text style={styles.checkBtnText}>Check In</Text>}
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.checkOutBtn, checkLoading && styles.btnDisabled]}
                 onPress={handleCheckOut}
                 disabled={checkLoading}
               >
-                {checkLoading ? <ActivityIndicator color="white" /> : <Text style={styles.checkBtnText}>🚪 Check Out</Text>}
+                {checkLoading ? <ActivityIndicator color="white" /> : <Text style={styles.checkBtnText}>Check Out</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -302,4 +348,8 @@ const styles = StyleSheet.create({
   netRow: { borderBottomWidth: 0, marginTop: 8 },
   netLabel: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
   netValue: { fontSize: 18, fontWeight: '800', color: '#16a34a' },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  infoCard: { width: '47%', backgroundColor: '#f8fafc', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e2e8f0' },
+  infoLabel: { fontSize: 11, color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', marginBottom: 4 },
+  infoValue: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
 });
