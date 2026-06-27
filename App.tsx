@@ -16,7 +16,6 @@ Notifications.setNotificationHandler({
   }),
 });
 async function registerForPushNotifications() {
-  // if (!Device.isDevice) return null;  // commented out for testing
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   if (existingStatus !== 'granted') {
@@ -24,10 +23,15 @@ async function registerForPushNotifications() {
     finalStatus = status;
   }
   if (finalStatus !== 'granted') return null;
-  const token = await Notifications.getExpoPushTokenAsync({
-    projectId: '927f4ee4-b5cd-42f0-a9b9-b63774335e26'
-  });
-  return token.data;
+  try {
+    const token = await Notifications.getExpoPushTokenAsync({
+      projectId: '927f4ee4-b5cd-42f0-a9b9-b63774335e26'
+    });
+    return token.data;
+  } catch (e) {
+    const deviceToken = await Notifications.getDevicePushTokenAsync();
+    return deviceToken.data;
+  }
 }
 const API = 'https://emp-management-api-4icz.onrender.com';
 export default function App() {
